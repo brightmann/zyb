@@ -39,6 +39,11 @@ const highlighter = await createHighlighter({
 
 export async function Markdown(props: MarkdownProps) {
   const { source, useMDXComponents } = props
+  // Discussion bodies and READMEs can contain HTML comments (GitHub's default
+  // welcome discussion starts with one). rsc-mdx parses `<!--` as a broken JSX
+  // tag and fails the entire build, so strip comments first — they are
+  // invisible in rendered output anyway.
+  const sanitized = source.replace(/<!--[\s\S]*?-->/g, '')
   return (
     <MDX
       rehypePlugins={[
@@ -86,7 +91,7 @@ export async function Markdown(props: MarkdownProps) {
         ],
       ]}
       remarkPlugins={[remarkGfm]}
-      source={source}
+      source={sanitized}
       useMDXComponents={useMDXComponents}
     />
   )
