@@ -1,13 +1,25 @@
-name: Deploy on Discussion Create
+name: Rebuild on discussion change
 
+# Content is baked in at build time (static export), so any discussion
+# create/edit/delete triggers an empty commit, which makes Workers Builds
+# rebuild and redeploy automatically. No deploy hook needed.
 on:
   discussion:
-    types: [created, edited]
+    types:
+      [created, edited, deleted, pinned, unpinned, locked, unlocked, category_changed]
 
 jobs:
-  webhook:
+  rebuild:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Trigger Vercel deploy webhook
+      - uses: actions/checkout@v4
+        with:
+          ref: next14
+      - name: Trigger rebuild
         run: |
-          curl -X POST ${{ secrets.DEPLOY_HOOK }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: rebuild for discussion update"
+          git push origin next14
